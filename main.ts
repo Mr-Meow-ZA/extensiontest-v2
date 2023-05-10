@@ -45,4 +45,13 @@ namespace encoderExtension {
     export function getCount(): number {
         return count;
     }
+
+    /**
+     * Reset the count to zero
+     */
+    //% blockId=encoder_reset_count block="reset Encoder Count"
+    //% blockGap=8
+    export function resetCount(): void {
+        count = 0;
+    }
 }
