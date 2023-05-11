@@ -1,10 +1,10 @@
-//% color=#0fbc11 icon="\uf1b9" block="Encoder Extension"
-
 namespace encoderExtension {
     let count = 0;
+    let lastStatePin1 = 0;
+    let lastStatePin2 = 0;
 
     /**
-     * Attach interrupt handlers to monitor encoder pin changes
+     * Attach interrupt handlers to monitor encoder pulses
      */
     //% blockId=encoder_attach_interrupts block="attach interrupts to Encoder Signals"
     //% blockGap=8
@@ -16,8 +16,26 @@ namespace encoderExtension {
     }
 
     function processCounts(): void {
-        count += 1;
-        // Serial write the count value whenever a pulse is detected
+        const statePin1 = pins.pulseDuration();
+        const statePin2 = pins.pulseDuration();
+
+        if (statePin1 === lastStatePin1 && statePin2 === lastStatePin2) {
+            // No pulse detected, ignore
+            return;
+        }
+
+        if (statePin1 < statePin2) {
+            // Forward motion
+            count += 1;
+        } else {
+            // Backward motion
+            count -= 1;
+        }
+
+        // Update last state
+        lastStatePin1 = statePin1;
+        lastStatePin2 = statePin2;
+
         serial.writeLine("Count: " + count);
     }
 
@@ -37,5 +55,7 @@ namespace encoderExtension {
     //% blockGap=8
     export function resetCount(): void {
         count = 0;
+        lastStatePin1 = 0;
+        lastStatePin2 = 0;
     }
 }
