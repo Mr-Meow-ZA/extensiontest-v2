@@ -2,26 +2,7 @@
 
 namespace encoderExtension {
     let count = 0;
-    let last_state_P1 = 0;
-    let last_state_P2 = 0;
-
-    function processCounts(): void {
-        const current_state_P1 = pins.digitalReadPin(DigitalPin.P1);
-        const current_state_P2 = pins.digitalReadPin(DigitalPin.P2);
-
-        if (last_state_P1 != current_state_P1 || last_state_P2 != current_state_P2) {
-            if (last_state_P1 == 0 && current_state_P1 == 1 && current_state_P2 == 0) {
-                // Forward motion: Pin 1 goes high before Pin 2 goes low
-                count += 1;
-            } else if (last_state_P2 == 0 && current_state_P2 == 1 && current_state_P1 == 0) {
-                // Backward motion: Pin 2 goes high before Pin 1 goes low
-                count -= 1;
-            }
-        }
-
-        last_state_P1 = current_state_P1;
-        last_state_P2 = current_state_P2;
-    }
+    let targetCount = 0;
 
     /**
      * Attach interrupt handlers to monitor encoder pin changes
@@ -29,12 +10,20 @@ namespace encoderExtension {
     //% blockId=encoder_attach_interrupts block="attach interrupts to Encoder Signals"
     //% blockGap=8
     export function attachInterrupts(): void {
-        pins.setEvents(DigitalPin.P1, PinEventType.Edge);
-        pins.setEvents(DigitalPin.P2, PinEventType.Edge);
-        control.onEvent(DigitalPin.P1, EventBusValue.MICROBIT_PIN_EVT_RISE, processCounts);
-        control.onEvent(DigitalPin.P2, EventBusValue.MICROBIT_PIN_EVT_RISE, processCounts);
-        control.onEvent(DigitalPin.P1, EventBusValue.MICROBIT_PIN_EVT_FALL, processCounts);
-        control.onEvent(DigitalPin.P2, EventBusValue.MICROBIT_PIN_EVT_FALL, processCounts);
+        pins.setEvents(DigitalPin.P1, PinEventType.Pulse);
+        pins.setEvents(DigitalPin.P2, PinEventType.Pulse);
+        control.onEvent(DigitalPin.P1, EventBusValue.MICROBIT_PIN_EVT_PULSE_HI, processCounts);
+        control.onEvent(DigitalPin.P2, EventBusValue.MICROBIT_PIN_EVT_PULSE_HI, processCounts);
+    }
+
+    function processCounts(): void {
+        count += 1;
+        if (count === targetCount) {
+            control.raiseEvent(
+                EventBusSource.MICROBIT_ID_IO_P1,
+                EventBusValue.MICROBIT_PIN_EVT_RISE
+            );
+        }
     }
 
     /**
@@ -53,5 +42,36 @@ namespace encoderExtension {
     //% blockGap=8
     export function resetCount(): void {
         count = 0;
+    }
+
+    /**
+     * Set the target count value
+     */
+    //% blockId=encoder_set_target block="set Encoder Target %target"
+    //% blockGap=8
+    export function setTarget(target: number): void {
+        targetCount = target;
+    }
+
+    /**
+     * Move the motor until the count matches the target
+     */
+    //% blockId=encoder_move_to_target block="move motor to Encoder Target"
+    //% blockGap=8
+    export function moveToTarget(): void {
+        if (count !== targetCount) {
+            // Insert your move motor code here
+        }
+    }
+
+    /**
+     * Stop the motor when the target is reached
+     */
+    //% blockId=encoder_stop_at_target block="stop motor at Encoder Target"
+    //% blockGap=8
+    export function stopAtTarget(): void {
+        if (count === targetCount) {
+            // Insert your stop motor code here
+        }
     }
 }
